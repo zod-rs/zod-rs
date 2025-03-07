@@ -9,7 +9,7 @@ importers:
   .:
     dependencies:
       '@zod-rs/wasm':
-        specifier: link:./vendor/pkg
+        specifier: workspace:*
         version: link:vendor/pkg
     devDependencies:
       '@biomejs/biome':
@@ -39,6 +39,8 @@ importers:
       zod:
         specifier: ^3.24.2
         version: 3.24.2
+
+  vendor/pkg: {}
 
 packages:
 

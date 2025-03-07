@@ -15,7 +15,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.4.0",
   "dependencies": {
-    "@zod-rs/wasm": "link:./vendor/pkg"
+    "@zod-rs/wasm": "workspace:*"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
