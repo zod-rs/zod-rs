@@ -35,50 +35,6 @@ pub fn greet() {
 }
 
 #[wasm_bindgen]
-pub fn is_number(value: JsValue) -> bool {
-    let result = zod::ZodNumber::new()._parse(&value);
-    let status = js_sys::Reflect::get(&result, &JsValue::from_str("status")).unwrap();
-    status.as_string().unwrap() == "ok"
-}
-
-#[wasm_bindgen]
-pub fn is_string(value: JsValue) -> bool {
-    let result = zod::ZodString::new()._parse(&value);
-    let status = js_sys::Reflect::get(&result, &JsValue::from_str("status")).unwrap();
-    status.as_string().unwrap() == "ok"
-}
-
-// 安全に文字列として取得するヘルパー
-#[wasm_bindgen]
-pub fn safe_parse_string(value: JsValue) -> Result<JsValue, JsValue> {
-    match zod::ZodString::new()._parse(&value) {
-        result => {
-            let status = js_sys::Reflect::get(&result, &JsValue::from_str("status")).unwrap();
-            if status.as_string().unwrap() == "ok" {
-                Ok(value)
-            } else {
-                Err(JsValue::from_str("Invalid string"))
-            }
-        }
-    }
-}
-
-// 安全に数値として取得するヘルパー
-#[wasm_bindgen]
-pub fn safe_parse_number(value: JsValue) -> Result<JsValue, JsValue> {
-    match zod::ZodNumber::new()._parse(&value) {
-        result => {
-            let status = js_sys::Reflect::get(&result, &JsValue::from_str("status")).unwrap();
-            if status.as_string().unwrap() == "ok" {
-                Ok(value)
-            } else {
-                Err(JsValue::from_str("Invalid number"))
-            }
-        }
-    }
-}
-
-#[wasm_bindgen]
 pub fn create_zod_number() -> zod::ZodNumber {
     zod::ZodNumber::new()
 }
@@ -88,19 +44,39 @@ pub fn create_zod_string() -> zod::ZodString {
     zod::ZodString::new()
 }
 
+// JavaScriptのコールバック関数を作成するヘルパー
+fn create_js_callback<F>(f: F) -> js_sys::Function 
+where
+    F: 'static + Fn() -> JsValue,
+{
+    let closure = wasm_bindgen::closure::Closure::wrap(
+        Box::new(f) as Box<dyn Fn() -> JsValue>
+    );
+    let js_func = closure.as_ref().clone();
+    closure.forget(); // メモリリークを防止するためJavaScriptに所有権を移譲
+    js_func.into()
+}
+
 // zodのzオブジェクトを作成する
 #[wasm_bindgen]
 pub fn create_zod() -> JsValue {
     let z = js_sys::Object::new();
+    
+    // 関数ラッパーを作成
+    let number_fn = create_js_callback(|| JsValue::from(create_zod_number()));
+    let string_fn = create_js_callback(|| JsValue::from(create_zod_string()));
+    
     js_sys::Reflect::set(
         &z,
         &JsValue::from_str("number"),
-        &JsValue::from(create_zod_number)
+        &number_fn
     ).unwrap();
+    
     js_sys::Reflect::set(
         &z,
         &JsValue::from_str("string"),
-        &JsValue::from(create_zod_string)
+        &string_fn
     ).unwrap();
+    
     z.into()
 }
