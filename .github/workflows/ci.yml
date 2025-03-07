@@ -13,6 +13,9 @@ jobs:
   ci:
     name: Build and Test
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -36,7 +39,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       - name: Build
-        run: pnpm build:vendor
+        run: pnpm build:vendor:dev
       - name: Test
         run: pnpm test
       
