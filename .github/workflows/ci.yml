@@ -46,13 +46,13 @@ jobs:
         run: wasm-pack pack vendor
       - name: Upload artifacts
         id: upload
-        if: steps.compress.outcome == 'success'
+        if: always() && steps.compress.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: artifact.tgz
           path: vendor/pkg/*.tgz
       - uses: actions/attest-build-provenance@v2
-        if: steps.upload.outcome == 'success'
+        if: always() && steps.upload.outcome == 'success'
         with:
           subject-name: artifact.tgz
           subject-digest: sha256:${{ steps.upload.outputs.artifact-digest }}
