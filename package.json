@@ -4,14 +4,25 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build:vendor": "wasm-pack build vendor"
+    "clean:vendor": "rimraf vendor/pkg",
+    "build:vendor": "wasm-pack build vendor -t nodejs --weak-refs --reference-types -s zod-rs -j8",
+    "test": "tsx test/index.ts",
+    "dev": "run-s clean:vendor build:vendor test"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.4.0",
+  "dependencies": {
+    "@zod-rs/wasm": "link:./vendor/pkg"
+  },
   "devDependencies": {
     "@types/node": "^22.13.9",
-    "typescript": "^5.8.2"
+    "cross-env": "^7.0.3",
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^6.0.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "zod": "^3.24.2"
   }
 }
