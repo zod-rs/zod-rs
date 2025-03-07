@@ -37,9 +37,9 @@ pub fn greet() {
 #[wasm_bindgen]
 pub fn is_number(value: JsValue) -> bool {
     zod::ZodNumber::new()._parse(&value).status == "ok"
+}
 
-    // if value.as_f64().is_some() {
-    //     return true;
-    // }
-    // false
+#[wasm_bindgen]
+pub fn is_string(value: JsValue) -> bool {
+    zod::ZodString::new()._parse(&value).status == "ok"
 }
