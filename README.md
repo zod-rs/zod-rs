@@ -100,27 +100,27 @@ Currently, this project aims to be compatible with zod@3.24.2.
     - [ ] `z.string().toLowerCase()`
     - [ ] `z.string().toUpperCase()`
 - Numbers
-  - [ ] `z.number().gt(5)`
-  - [ ] `z.number().gte(5)`
-    - [ ] alias `.min(5)`
-  - [ ] `z.number().lt(5)`
-  - [ ] `z.number().lte(5)`
-    - [ ] alias `.max(5)`
-  - [ ] `z.number().int()`
-  - [ ] `z.number().positive()`
+  - [x] `z.number().gt(5)`
+  - [x] `z.number().gte(5)`
+    - [x] alias `.min(5)`
+  - [x] `z.number().lt(5)`
+  - [x] `z.number().lte(5)`
+    - [x] alias `.max(5)`
+  - [x] `z.number().int()`
+  - [*] `z.number().positive()`
     - `> 0`
-  - [ ] `z.number().nonnegative()`
+  - [*] `z.number().nonnegative()`
     - `>= 0`
-  - [ ] `z.number().negative()`
+  - [*] `z.number().negative()`
     - `< 0`
-  - [ ] `z.number().nonpositive()`
+  - [*] `z.number().nonpositive()`
     - `<= 0`
-  - [ ] `z.number().multipleOf(5)`
+  - [*] `z.number().multipleOf(5)`
     - Evenly divisible by 5
-    - alias `.step(5)`
-  - [ ] `z.number().finite()`
+    - [*] alias `.step(5)`
+  - [*] `z.number().finite()`
     - value must be finite, not Infinity or -Infinity
-  - [ ] `z.number().safe()`
+  - [*] `z.number().safe()`
     - value must be between `Number.MIN_SAFE_INTEGER` and `Number.MAX_SAFE_INTEGER`
 - BigInts
   - same as `z.number()`

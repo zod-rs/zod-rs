@@ -13,6 +13,14 @@ pub struct ZodNumber {
   max: Option<f64>,
   // lt=trueの場合は「未満」、lt=falseの場合は「以下」
   lt: bool,
+  // 整数かどうかの制約
+  is_int: bool,
+  // 倍数の制約（multipleOf）
+  multiple_of: Option<f64>,
+  // 有限数かどうかの制約
+  is_finite: bool,
+  // 安全な整数範囲内かどうかの制約
+  is_safe: bool,
 }
 
 #[wasm_bindgen]
@@ -20,13 +28,15 @@ impl ZodNumber {
   #[wasm_bindgen(constructor)]
   pub fn new() -> Self {
     ZodNumber {
-      base: ZodTypeBase {
-        type_name: "number".to_string(),
-      },
+      base: ZodTypeBase::new("number"),
       min: None,
       gt: false,
       max: None,
       lt: false,
+      is_int: false,
+      multiple_of: None,
+      is_finite: false,
+      is_safe: false,
     }
   }
 
@@ -34,13 +44,15 @@ impl ZodNumber {
   #[wasm_bindgen]
   pub fn gt(&self, value: f64) -> ZodNumber {
     ZodNumber {
-      base: ZodTypeBase {
-        type_name: self.base.type_name.clone(),
-      },
+      base: ZodTypeBase::new(&self.base.type_name),
       min: Some(value),
       gt: true,
       max: self.max,
       lt: self.lt,
+      is_int: self.is_int,
+      multiple_of: self.multiple_of,
+      is_finite: self.is_finite,
+      is_safe: self.is_safe,
     }
   }
 
@@ -48,13 +60,15 @@ impl ZodNumber {
   #[wasm_bindgen]
   pub fn gte(&self, value: f64) -> ZodNumber {
     ZodNumber {
-      base: ZodTypeBase {
-        type_name: self.base.type_name.clone(),
-      },
+      base: ZodTypeBase::new(&self.base.type_name),
       min: Some(value),
       gt: false,
       max: self.max,
       lt: self.lt,
+      is_int: self.is_int,
+      multiple_of: self.multiple_of,
+      is_finite: self.is_finite,
+      is_safe: self.is_safe,
     }
   }
 
@@ -62,13 +76,15 @@ impl ZodNumber {
   #[wasm_bindgen]
   pub fn lt(&self, value: f64) -> ZodNumber {
     ZodNumber {
-      base: ZodTypeBase {
-        type_name: self.base.type_name.clone(),
-      },
+      base: ZodTypeBase::new(&self.base.type_name),
       min: self.min,
       gt: self.gt,
       max: Some(value),
       lt: true,
+      is_int: self.is_int,
+      multiple_of: self.multiple_of,
+      is_finite: self.is_finite,
+      is_safe: self.is_safe,
     }
   }
 
@@ -76,14 +92,162 @@ impl ZodNumber {
   #[wasm_bindgen]
   pub fn lte(&self, value: f64) -> ZodNumber {
     ZodNumber {
-      base: ZodTypeBase {
-        type_name: self.base.type_name.clone(),
-      },
+      base: ZodTypeBase::new(&self.base.type_name),
       min: self.min,
       gt: self.gt,
       max: Some(value),
       lt: false,
+      is_int: self.is_int,
+      multiple_of: self.multiple_of,
+      is_finite: self.is_finite,
+      is_safe: self.is_safe,
     }
+  }
+  
+  // 整数かどうかを検証するメソッド
+  #[wasm_bindgen]
+  pub fn int(&self) -> ZodNumber {
+    ZodNumber {
+      base: ZodTypeBase::new(&self.base.type_name),
+      min: self.min,
+      gt: self.gt,
+      max: self.max,
+      lt: self.lt,
+      is_int: true,
+      multiple_of: self.multiple_of,
+      is_finite: self.is_finite,
+      is_safe: self.is_safe,
+    }
+  }
+  
+  // 正の数（0より大きい）を検証するメソッド
+  #[wasm_bindgen]
+  pub fn positive(&self) -> ZodNumber {
+    ZodNumber {
+      base: ZodTypeBase::new(&self.base.type_name),
+      min: Some(0.0),
+      gt: true,
+      max: self.max,
+      lt: self.lt,
+      is_int: self.is_int,
+      multiple_of: self.multiple_of,
+      is_finite: self.is_finite,
+      is_safe: self.is_safe,
+    }
+  }
+  
+  // 非負の数（0以上）を検証するメソッド
+  #[wasm_bindgen]
+  pub fn nonnegative(&self) -> ZodNumber {
+    ZodNumber {
+      base: ZodTypeBase::new(&self.base.type_name),
+      min: Some(0.0),
+      gt: false,
+      max: self.max,
+      lt: self.lt,
+      is_int: self.is_int,
+      multiple_of: self.multiple_of,
+      is_finite: self.is_finite,
+      is_safe: self.is_safe,
+    }
+  }
+  
+  // 負の数（0より小さい）を検証するメソッド
+  #[wasm_bindgen]
+  pub fn negative(&self) -> ZodNumber {
+    ZodNumber {
+      base: ZodTypeBase::new(&self.base.type_name),
+      min: self.min,
+      gt: self.gt,
+      max: Some(0.0),
+      lt: true,
+      is_int: self.is_int,
+      multiple_of: self.multiple_of,
+      is_finite: self.is_finite,
+      is_safe: self.is_safe,
+    }
+  }
+  
+  // 非正の数（0以下）を検証するメソッド
+  #[wasm_bindgen]
+  pub fn nonpositive(&self) -> ZodNumber {
+    ZodNumber {
+      base: ZodTypeBase::new(&self.base.type_name),
+      min: self.min,
+      gt: self.gt,
+      max: Some(0.0),
+      lt: false,
+      is_int: self.is_int,
+      multiple_of: self.multiple_of,
+      is_finite: self.is_finite,
+      is_safe: self.is_safe,
+    }
+  }
+  
+  // 指定された値の倍数であることを検証するメソッド
+  #[wasm_bindgen(js_name = multipleOf)]
+  pub fn multiple_of(&self, value: f64) -> ZodNumber {
+    ZodNumber {
+      base: ZodTypeBase::new(&self.base.type_name),
+      min: self.min,
+      gt: self.gt,
+      max: self.max,
+      lt: self.lt,
+      is_int: self.is_int,
+      multiple_of: Some(value),
+      is_finite: self.is_finite,
+      is_safe: self.is_safe,
+    }
+  }
+  
+  // 有限数のみを許可する検証メソッド
+  #[wasm_bindgen]
+  pub fn finite(&self) -> ZodNumber {
+    ZodNumber {
+      base: ZodTypeBase::new(&self.base.type_name),
+      min: self.min,
+      gt: self.gt,
+      max: self.max,
+      lt: self.lt,
+      is_int: self.is_int,
+      multiple_of: self.multiple_of,
+      is_finite: true,
+      is_safe: self.is_safe,
+    }
+  }
+  
+  // 安全な整数範囲内の値のみを許可する検証メソッド
+  #[wasm_bindgen]
+  pub fn safe(&self) -> ZodNumber {
+    ZodNumber {
+      base: ZodTypeBase::new(&self.base.type_name),
+      min: self.min,
+      gt: self.gt,
+      max: self.max,
+      lt: self.lt,
+      is_int: self.is_int,
+      multiple_of: self.multiple_of,
+      is_finite: self.is_finite,
+      is_safe: true,
+    }
+  }
+  
+  // step (multipleOfのエイリアス)
+  #[wasm_bindgen]
+  pub fn step(&self, value: f64) -> ZodNumber {
+    self.multiple_of(value)
+  }
+
+  // min (gteのエイリアス)
+  #[wasm_bindgen()]
+  pub fn min(&self, value: f64) -> ZodNumber {
+    self.gte(value)
+  }
+  
+  // max (lteのエイリアス)
+  #[wasm_bindgen()]
+  pub fn max(&self, value: f64) -> ZodNumber {
+    self.lte(value)
   }
 
   // 内部処理用のメソッド
@@ -124,6 +288,45 @@ impl ZodNumber {
           return super::types::create_result_object(
             "error", 
             &JsValue::from_str(&format!("Number must be less than or equal to {}", max_value))
+          );
+        }
+      }
+      
+      // 整数制約のチェック
+      if self.is_int && num.fract() != 0.0 {
+        return super::types::create_result_object(
+          "error",
+          &JsValue::from_str("Number must be an integer")
+        );
+      }
+      
+      // 倍数制約のチェック
+      if let Some(multiple) = self.multiple_of {
+        if multiple != 0.0 && (num % multiple).abs() > f64::EPSILON {
+          return super::types::create_result_object(
+            "error",
+            &JsValue::from_str(&format!("Number must be a multiple of {}", multiple))
+          );
+        }
+      }
+      
+      // 有限数制約のチェック
+      if self.is_finite && (num.is_infinite() || num.is_nan()) {
+        return super::types::create_result_object(
+          "error",
+          &JsValue::from_str("Number must be finite, not Infinity or NaN")
+        );
+      }
+      
+      // 安全な整数範囲の制約チェック
+      if self.is_safe {
+        const MIN_SAFE_INT: f64 = -9007199254740991.0; // Number.MIN_SAFE_INTEGER
+        const MAX_SAFE_INT: f64 = 9007199254740991.0;  // Number.MAX_SAFE_INTEGER
+        
+        if num < MIN_SAFE_INT || num > MAX_SAFE_INT {
+          return super::types::create_result_object(
+            "error",
+            &JsValue::from_str("Number must be between -2^53+1 and 2^53-1")
           );
         }
       }

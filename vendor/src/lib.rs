@@ -21,19 +21,6 @@ extern "C" {
     fn log_many(a: &str, b: &str);
 }
 
-macro_rules! console_log {
-    // Note that this is using the `log` function imported above during
-    // `bare_bones`
-    ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
-}
-
-#[wasm_bindgen]
-pub fn greet() {
-    console_log!("Hello {}!", "world");
-    console_log!("Let's print some numbers...");
-    console_log!("1 + 3 = {}", 1 + 3);
-}
-
 #[wasm_bindgen]
 pub fn create_zod_number() -> zod::ZodNumber {
     zod::ZodNumber::new()

@@ -12,9 +12,7 @@ impl ZodString {
   #[wasm_bindgen(constructor)]
   pub fn new() -> Self {
     ZodString {
-      base: ZodTypeBase {
-        type_name: "string".to_string(),
-      },
+      base: ZodTypeBase::new("string"),
     }
   }
 

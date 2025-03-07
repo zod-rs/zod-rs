@@ -16,6 +16,17 @@ pub struct ZodTypeBase {
   pub type_name: String,
 }
 
+// JavaScriptからの直接インスタンス化を防ぐため、
+// privateコンストラクタをTypeScript定義と一致させる
+impl ZodTypeBase {
+  // このメソッドはJavaScriptからアクセスできない
+  pub fn new(type_name: &str) -> Self {
+    ZodTypeBase {
+      type_name: type_name.to_string(),
+    }
+  }
+}
+
 // ZodTypeトレイト - すべてのZod型が実装する必要があるインターフェース
 pub trait ZodType {
   // 型名を返すメソッド
@@ -46,12 +57,12 @@ pub trait ZodType {
     }
     "unknown".to_string()
   }
-  
+
   // 型チェックを行う共通メソッド
   fn _check_type(&self, value: &JsValue) -> bool {
     self._get_type(value) == self.r#type()
   }
-  
+
   // パース結果を生成する共通メソッド
   fn _create_parse_result(&self, value: &JsValue) -> JsValue {
     if self._check_type(value) {
