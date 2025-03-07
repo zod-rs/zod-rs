@@ -57,26 +57,44 @@ where
     js_func.into()
 }
 
+// 型情報を表す構造体
+struct ZodTypeInfo {
+    name: &'static str,
+    factory: fn() -> JsValue,
+}
+
 // zodのzオブジェクトを作成する
 #[wasm_bindgen]
 pub fn create_zod() -> JsValue {
     let z = js_sys::Object::new();
     
-    // 関数ラッパーを作成
-    let number_fn = create_js_callback(|| JsValue::from(create_zod_number()));
-    let string_fn = create_js_callback(|| JsValue::from(create_zod_string()));
+    // Zodの型定義のリスト
+    // 新しい型を追加するには、この配列に要素を追加するだけ
+    let types = [
+        ZodTypeInfo {
+            name: "number",
+            factory: || JsValue::from(create_zod_number()),
+        },
+        ZodTypeInfo {
+            name: "string",
+            factory: || JsValue::from(create_zod_string()),
+        },
+        // 例: 将来的な追加
+        // ZodTypeInfo {
+        //     name: "boolean",
+        //     factory: || JsValue::from(create_zod_boolean()),
+        // },
+    ];
     
-    js_sys::Reflect::set(
-        &z,
-        &JsValue::from_str("number"),
-        &number_fn
-    ).unwrap();
-    
-    js_sys::Reflect::set(
-        &z,
-        &JsValue::from_str("string"),
-        &string_fn
-    ).unwrap();
+    // 各型をzオブジェクトに登録
+    for type_info in types.iter() {
+        let factory_fn = create_js_callback(type_info.factory);
+        js_sys::Reflect::set(
+            &z,
+            &JsValue::from_str(type_info.name),
+            &factory_fn
+        ).unwrap();
+    }
     
     z.into()
 }

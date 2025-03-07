@@ -134,13 +134,20 @@ impl ZodNumber {
   }
   
   // JavaScriptから利用可能な公開メソッド
+  // 戻り値をJsValueではなく明示的に数値として指定
   #[wasm_bindgen]
-  pub fn parse(&self, value: JsValue) -> JsValue {
+  pub fn parse(&self, value: JsValue) -> f64 {
     let result = self._parse(&value);
     let status = js_sys::Reflect::get(&result, &JsValue::from_str("status")).unwrap();
     
     if status.as_string().unwrap() == "ok" {
-      return value;
+      // 値が数値の場合、そのまま返す
+      if let Some(num) = value.as_f64() {
+        return num;
+      } else {
+        // 通常はここに到達しないはず
+        return 0.0;
+      }
     } else {
       // エラーメッセージを取得
       let error_value = js_sys::Reflect::get(&result, &JsValue::from_str("value")).unwrap();

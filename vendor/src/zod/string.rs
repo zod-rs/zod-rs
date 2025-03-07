@@ -24,13 +24,20 @@ impl ZodString {
   }
   
   // JavaScriptから利用可能な公開メソッド
+  // 戻り値をJsValueではなく明示的に文字列として指定
   #[wasm_bindgen]
-  pub fn parse(&self, value: JsValue) -> JsValue {
+  pub fn parse(&self, value: JsValue) -> String {
     let result = self._parse(&value);
     let status = js_sys::Reflect::get(&result, &JsValue::from_str("status")).unwrap();
     
     if status.as_string().unwrap() == "ok" {
-      return value;
+      // 値が文字列の場合はそのまま返す
+      if let Some(str_val) = value.as_string() {
+        return str_val;
+      } else {
+        // 通常はここに到達しないはず
+        return "".to_string();
+      }
     } else {
       // エラーをスロー
       let error_msg = format!("Expected string, received {}", <Self as ZodType>::_get_type(self, &value));
