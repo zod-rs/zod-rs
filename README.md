@@ -41,7 +41,7 @@ Currently, this project aims to be compatible with zod@3.24.2.
 
 - Primitives
   - [ ] `z.string()`
-  - [*] `z.number()`
+  - [x] `z.number()`
   - [ ] `z.bigint()`
   - [ ] `z.boolean()`
   - [ ] `z.date()`
@@ -108,20 +108,20 @@ Currently, this project aims to be compatible with zod@3.24.2.
   - [x] `z.number().lte(5)`
     - [x] alias `.max(5)`
   - [x] `z.number().int()`
-  - [*] `z.number().positive()`
+  - [x] `z.number().positive()`
     - `> 0`
-  - [*] `z.number().nonnegative()`
+  - [x] `z.number().nonnegative()`
     - `>= 0`
-  - [*] `z.number().negative()`
+  - [x] `z.number().negative()`
     - `< 0`
-  - [*] `z.number().nonpositive()`
+  - [x] `z.number().nonpositive()`
     - `<= 0`
-  - [*] `z.number().multipleOf(5)`
+  - [x] `z.number().multipleOf(5)`
     - Evenly divisible by 5
-    - [*] alias `.step(5)`
-  - [*] `z.number().finite()`
+    - [x] alias `.step(5)`
+  - [x] `z.number().finite()`
     - value must be finite, not Infinity or -Infinity
-  - [*] `z.number().safe()`
+  - [x] `z.number().safe()`
     - value must be between `Number.MIN_SAFE_INTEGER` and `Number.MAX_SAFE_INTEGER`
 - BigInts
   - same as `z.number()`
