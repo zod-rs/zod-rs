@@ -1,7 +1,7 @@
 mod utils;
+mod zod;
 
 use wasm_bindgen::prelude::*;
-mod zod;
 
 #[wasm_bindgen]
 extern "C" {
@@ -36,10 +36,71 @@ pub fn greet() {
 
 #[wasm_bindgen]
 pub fn is_number(value: JsValue) -> bool {
-    zod::ZodNumber::new()._parse(&value).status == "ok"
+    let result = zod::ZodNumber::new()._parse(&value);
+    let status = js_sys::Reflect::get(&result, &JsValue::from_str("status")).unwrap();
+    status.as_string().unwrap() == "ok"
 }
 
 #[wasm_bindgen]
 pub fn is_string(value: JsValue) -> bool {
-    zod::ZodString::new()._parse(&value).status == "ok"
+    let result = zod::ZodString::new()._parse(&value);
+    let status = js_sys::Reflect::get(&result, &JsValue::from_str("status")).unwrap();
+    status.as_string().unwrap() == "ok"
+}
+
+// 安全に文字列として取得するヘルパー
+#[wasm_bindgen]
+pub fn safe_parse_string(value: JsValue) -> Result<JsValue, JsValue> {
+    match zod::ZodString::new()._parse(&value) {
+        result => {
+            let status = js_sys::Reflect::get(&result, &JsValue::from_str("status")).unwrap();
+            if status.as_string().unwrap() == "ok" {
+                Ok(value)
+            } else {
+                Err(JsValue::from_str("Invalid string"))
+            }
+        }
+    }
+}
+
+// 安全に数値として取得するヘルパー
+#[wasm_bindgen]
+pub fn safe_parse_number(value: JsValue) -> Result<JsValue, JsValue> {
+    match zod::ZodNumber::new()._parse(&value) {
+        result => {
+            let status = js_sys::Reflect::get(&result, &JsValue::from_str("status")).unwrap();
+            if status.as_string().unwrap() == "ok" {
+                Ok(value)
+            } else {
+                Err(JsValue::from_str("Invalid number"))
+            }
+        }
+    }
+}
+
+#[wasm_bindgen]
+pub fn create_zod_number() -> zod::ZodNumber {
+    zod::ZodNumber::new()
+}
+
+#[wasm_bindgen]
+pub fn create_zod_string() -> zod::ZodString {
+    zod::ZodString::new()
+}
+
+// zodのzオブジェクトを作成する
+#[wasm_bindgen]
+pub fn create_zod() -> JsValue {
+    let z = js_sys::Object::new();
+    js_sys::Reflect::set(
+        &z,
+        &JsValue::from_str("number"),
+        &JsValue::from(create_zod_number)
+    ).unwrap();
+    js_sys::Reflect::set(
+        &z,
+        &JsValue::from_str("string"),
+        &JsValue::from(create_zod_string)
+    ).unwrap();
+    z.into()
 }

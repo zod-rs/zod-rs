@@ -1,5 +1,14 @@
 import pkg from "@zod-rs/wasm"
-import { expect, test, describe } from "vitest"
+import { describe, expect, test } from "vitest"
+
+const z = pkg.create_zod()
+
+describe("check z object works", () => {
+  test("test z.number", () => {
+    expect(z.number).toBeDefined()
+    expect(() => { z.number() }).not.toThrow()
+  })
+})
 
 describe("is_number", () => {
   test("test is_number", () => {
