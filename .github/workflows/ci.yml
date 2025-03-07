@@ -2,11 +2,16 @@ name: Build and Test
 
 on:
   push:
+    paths-ignore:
+      - "*.md"
   pull_request:
+    paths-ignore:
+      - "*.md"
 
 
 jobs:
   ci:
+    name: Build and Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,6 +22,15 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            vendor/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - name: Install dependencies
@@ -25,3 +39,20 @@ jobs:
         run: pnpm build:vendor
       - name: Test
         run: pnpm test
+      
+      - name: Create tarball
+        if: always()
+        id: compress
+        run: wasm-pack pack vendor
+      - name: Upload artifacts
+        id: upload
+        if: steps.compress.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact.tgz
+          path: vendor/pkg/*.tgz
+      - uses: actions/attest-build-provenance@v2
+        if: steps.upload.outcome == 'success'
+        with:
+          subject-name: artifact.tgz
+          subject-digest: sha256:${{ steps.upload.outputs.artifact-digest }}

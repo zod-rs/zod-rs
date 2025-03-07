@@ -5,11 +5,13 @@
   "main": "index.js",
   "scripts": {
     "clean:vendor": "rimraf vendor/pkg",
-    "build:vendor": "wasm-pack build vendor -t nodejs --weak-refs --reference-types -s zod-rs --dev --no-opt -j8 ",
+    "build:vendor:dev": "wasm-pack build vendor -t nodejs --weak-refs --reference-types -s zod-rs --dev --no-opt -j8",
+    "build:vendor:prod": "wasm-pack build vendor -t nodejs --weak-refs --reference-types -s zod-rs --release -j8",
     "test": "vitest run",
     "test:vendor": "wasm-pack test --node vendor",
     "lint": "biome check",
-    "dev": "run-s clean:vendor build:vendor test"
+    "dev": "run-s clean:vendor build:vendor:dev test",
+    "preinstall": "pnpm run build:vendor:dev"
   },
   "keywords": [],
   "author": "",

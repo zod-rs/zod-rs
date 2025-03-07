@@ -3,6 +3,10 @@ updates:
 - package-ecosystem: cargo
   directory: "/vendor/"
   schedule:
-    interval: daily
+    interval: weekly
     time: "08:00"
-  open-pull-requests-limit: 10
+- package-ecosystem: npm
+  directory: "/"
+  schedule:
+    interval: weekly
+    time: "08:00"

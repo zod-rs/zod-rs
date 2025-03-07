@@ -1,4 +1,4 @@
-# `zod-rs`
+# `zod-rs` [![Build and Test](https://github.com/zod-rs/zod-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/zod-rs/zod-rs/actions/workflows/ci.yml)
 
 **This project is under construction.**
 
