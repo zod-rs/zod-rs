@@ -5,17 +5,18 @@
   "main": "index.js",
   "scripts": {
     "clean:vendor": "rimraf vendor/pkg",
-    "build:vendor": "wasm-pack build vendor -t nodejs --weak-refs --reference-types -s zod-rs -j8",
+    "build:vendor": "wasm-pack build vendor -t nodejs --weak-refs --reference-types -s zod-rs --dev --no-opt -j8 ",
     "test": "vitest run",
+    "test:vendor": "wasm-pack test --node vendor",
     "lint": "biome check",
     "dev": "run-s clean:vendor build:vendor test"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "packageManager": "pnpm@10.4.0",
   "dependencies": {
-    "@zod-rs/wasm": "workspace:*"
+    "@zod-rs/wasm": "workspace:./vendor/pkg"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
@@ -27,6 +28,7 @@
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
     "vitest": "^3.0.8",
-    "zod": "^3.24.2"
+    "@jest/globals": "npm:vitest@^3.0.8",
+    "zod-original": "npm:zod@^3.24.2"
   }
 }

@@ -31,7 +31,8 @@ if (!parsed.success) {
 ## Building
 
 ```sh
-# TODO
+corepack pnpm build:vendor
+# then wasm-bindgen package will be built at vendor/pkg
 ```
 
 ## Roadmap
@@ -40,7 +41,7 @@ Currently, this project aims to be compatible with zod@3.24.2.
 
 - Primitives
   - [ ] `z.string()`
-  - [ ] `z.number()`
+  - [*] `z.number()`
   - [ ] `z.bigint()`
   - [ ] `z.boolean()`
   - [ ] `z.date()`
