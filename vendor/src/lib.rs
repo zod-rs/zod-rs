@@ -31,6 +31,21 @@ pub fn create_zod_string() -> zod::ZodString {
     zod::ZodString::new()
 }
 
+#[wasm_bindgen]
+pub fn create_zod_bigint() -> zod::ZodBigInt {
+    zod::ZodBigInt::new()
+}
+
+#[wasm_bindgen]
+pub fn create_zod_nan() -> zod::ZodNaN {
+    zod::ZodNaN::new()
+}
+
+#[wasm_bindgen]
+pub fn create_zod_boolean() -> zod::ZodBoolean {
+    zod::ZodBoolean::new()
+}
+
 // JavaScriptのコールバック関数を作成するヘルパー
 fn create_js_callback<F>(f: F) -> js_sys::Function 
 where
@@ -66,11 +81,18 @@ pub fn create_zod() -> JsValue {
             name: "string",
             factory: || JsValue::from(create_zod_string()),
         },
-        // 例: 将来的な追加
-        // ZodTypeInfo {
-        //     name: "boolean",
-        //     factory: || JsValue::from(create_zod_boolean()),
-        // },
+        ZodTypeInfo {
+            name: "bigint",
+            factory: || JsValue::from(create_zod_bigint()),
+        },
+        ZodTypeInfo {
+            name: "nan",
+            factory: || JsValue::from(create_zod_nan()),
+        },
+        ZodTypeInfo {
+            name: "boolean",
+            factory: || JsValue::from(create_zod_boolean()),
+        },
     ];
     
     // 各型をzオブジェクトに登録

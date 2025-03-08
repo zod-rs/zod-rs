@@ -42,8 +42,8 @@ Currently, this project aims to be compatible with zod@3.24.2.
 - Primitives
   - [ ] `z.string()`
   - [x] `z.number()`
-  - [ ] `z.bigint()`
-  - [ ] `z.boolean()`
+  - [x] `z.bigint()`
+  - [x] `z.boolean()`
   - [ ] `z.date()`
   - [ ] `z.symbol()`
   - [ ] `z.undefined()`
@@ -125,17 +125,17 @@ Currently, this project aims to be compatible with zod@3.24.2.
     - value must be between `Number.MIN_SAFE_INTEGER` and `Number.MAX_SAFE_INTEGER`
 - BigInts
   - same as `z.number()`
-  - [ ] `z.bigint().gt(5n)`
-  - [ ] `z.bigint().gte(5n)`
-  - [ ] `z.bigint().lt(5n)`
-  - [ ] `z.bigint().lte(5n)`
-  - [ ] `z.bigint().positive()`
-  - [ ] `z.bigint().nonnegative()`
-  - [ ] `z.bigint().negative()`
-  - [ ] `z.bigint().nonpositive()`
-  - [ ] `z.bigint().multipleOf(5n)`
+  - [x] `z.bigint().gt(5n)`
+  - [x] `z.bigint().gte(5n)`
+  - [x] `z.bigint().lt(5n)`
+  - [x] `z.bigint().lte(5n)`
+  - [x] `z.bigint().positive()`
+  - [x] `z.bigint().nonnegative()`
+  - [x] `z.bigint().negative()`
+  - [x] `z.bigint().nonpositive()`
+  - [x] `z.bigint().multipleOf(5n)`
 - NaNs
-  - `z.nan()`
+  - [x] `z.nan()`
 - Booleans
   - `z.boolean()`
 - Dates
