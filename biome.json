@@ -22,7 +22,8 @@
     "rules": {
       "recommended": true,
       "style": {
-        "useNumberNamespace": "off"
+        "useNumberNamespace": "off",
+        "noUnusedTemplateLiteral": "off"
       }
     }
   },
