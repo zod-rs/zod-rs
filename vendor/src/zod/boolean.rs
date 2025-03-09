@@ -56,6 +56,27 @@ impl ZodBoolean {
       wasm_bindgen::throw_str(&error_msg);
     }
   }
+
+  #[wasm_bindgen]
+  pub fn safe_parse(&self, value: JsValue) -> Result<bool, String> {
+      let result = self._parse(&value);
+      let status = js_sys::Reflect::get(&result, &JsValue::from_str("status")).unwrap();
+      if status.as_string().unwrap() == "ok" {
+          if let Some(bool_value) = value.as_bool() {
+              Ok(bool_value)
+          } else {
+              Err("Expected boolean, received non-boolean value".to_string())
+          }
+      } else {
+          let error_value = js_sys::Reflect::get(&result, &JsValue::from_str("value")).unwrap();
+          let error_msg = if error_value.is_string() {
+              error_value.as_string().unwrap()
+          } else {
+              format!("Expected boolean, received {}", <Self as ZodType>::_get_type(self, &value))
+          };
+          Err(error_msg)
+      }
+  }
 }
 
 // ZodBoolean型にZodTypeトレイトを実装

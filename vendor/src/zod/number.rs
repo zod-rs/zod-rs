@@ -449,6 +449,34 @@ impl ZodNumber {
       wasm_bindgen::throw_str(&error_msg);
     }
   }
+
+  // JavaScriptから利用可能な安全なパースメソッド
+  // 例外をスローする代わりにResult型を返す
+  #[wasm_bindgen]
+  pub fn safe_parse(&self, value: JsValue) -> Result<f64, String> {
+    let result = self._parse(&value);
+    let status = js_sys::Reflect::get(&result, &JsValue::from_str("status")).unwrap();
+    
+    if status.as_string().unwrap() == "ok" {
+      // 値が数値の場合、そのまま返す
+      if let Some(num) = value.as_f64() {
+        Ok(num)
+      } else {
+        // 通常はここに到達しないはず
+        Err("Expected number, received non-number value".to_string())
+      }
+    } else {
+      // エラーメッセージを取得
+      let error_value = js_sys::Reflect::get(&result, &JsValue::from_str("value")).unwrap();
+      let error_msg = if error_value.is_string() {
+        error_value.as_string().unwrap()
+      } else {
+        format!("Expected number, received {}", <Self as ZodType>::_get_type(self, &value))
+      };
+      
+      Err(error_msg)
+    }
+  }
 }
 
 // ZodNumber型にZodTypeトレイトを実装

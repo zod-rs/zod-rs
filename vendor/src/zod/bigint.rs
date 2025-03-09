@@ -47,11 +47,8 @@ impl ZodBigInt {
   #[wasm_bindgen]
   pub fn gt(&self, value: JsValue) -> ZodBigInt {
     let bigint_str = if value.is_bigint() {
-      // BigIntからJavaScriptのstringへ変換（Rustでは直接BigIntを扱えないため）
-      let big_int_to_string = js_sys::Function::new_with_args("n", "return n.toString()");
-      big_int_to_string.call1(&JsValue::NULL, &value).unwrap().as_string().unwrap()
+      value.as_string().unwrap()
     } else {
-      // 数値が渡された場合も処理（暗黙的にBigIntに変換）
       value.as_f64().map_or_else(
         || value.as_string().unwrap_or_else(|| "0".to_string()),
         |n| n.to_string()
@@ -76,8 +73,7 @@ impl ZodBigInt {
   #[wasm_bindgen]
   pub fn gte(&self, value: JsValue) -> ZodBigInt {
     let bigint_str = if value.is_bigint() {
-      let big_int_to_string = js_sys::Function::new_with_args("n", "return n.toString()");
-      big_int_to_string.call1(&JsValue::NULL, &value).unwrap().as_string().unwrap()
+      value.as_string().unwrap()
     } else {
       value.as_f64().map_or_else(
         || value.as_string().unwrap_or_else(|| "0".to_string()),
@@ -103,8 +99,7 @@ impl ZodBigInt {
   #[wasm_bindgen]
   pub fn lt(&self, value: JsValue) -> ZodBigInt {
     let bigint_str = if value.is_bigint() {
-      let big_int_to_string = js_sys::Function::new_with_args("n", "return n.toString()");
-      big_int_to_string.call1(&JsValue::NULL, &value).unwrap().as_string().unwrap()
+      value.as_string().unwrap()
     } else {
       value.as_f64().map_or_else(
         || value.as_string().unwrap_or_else(|| "0".to_string()),
@@ -130,8 +125,7 @@ impl ZodBigInt {
   #[wasm_bindgen]
   pub fn lte(&self, value: JsValue) -> ZodBigInt {
     let bigint_str = if value.is_bigint() {
-      let big_int_to_string = js_sys::Function::new_with_args("n", "return n.toString()");
-      big_int_to_string.call1(&JsValue::NULL, &value).unwrap().as_string().unwrap()
+      value.as_string().unwrap()
     } else {
       value.as_f64().map_or_else(
         || value.as_string().unwrap_or_else(|| "0".to_string()),
@@ -225,8 +219,7 @@ impl ZodBigInt {
   #[wasm_bindgen(js_name = multipleOf)]
   pub fn multiple_of(&self, value: JsValue) -> ZodBigInt {
     let bigint_str = if value.is_bigint() {
-      let big_int_to_string = js_sys::Function::new_with_args("n", "return n.toString()");
-      big_int_to_string.call1(&JsValue::NULL, &value).unwrap().as_string().unwrap()
+      value.as_string().unwrap()
     } else {
       value.as_f64().map_or_else(
         || value.as_string().unwrap_or_else(|| "0".to_string()),
@@ -265,13 +258,7 @@ impl ZodBigInt {
   pub fn min_value(&self) -> JsValue {
     match &self.min {
       Some(value_str) => {
-        // 文字列をBigIntに変換
-        let to_bigint = js_sys::Function::new_with_args(
-          "str", 
-          "return BigInt(str);"
-        );
-        
-        to_bigint.call1(&JsValue::NULL, &JsValue::from_str(value_str)).unwrap_or(JsValue::null())
+        JsValue::from_str(value_str)
       },
       None => JsValue::null(),
     }
@@ -282,13 +269,7 @@ impl ZodBigInt {
   pub fn max_value(&self) -> JsValue {
     match &self.max {
       Some(value_str) => {
-        // 文字列をBigIntに変換
-        let to_bigint = js_sys::Function::new_with_args(
-          "str", 
-          "return BigInt(str);"
-        );
-        
-        to_bigint.call1(&JsValue::NULL, &JsValue::from_str(value_str)).unwrap_or(JsValue::null())
+        JsValue::from_str(value_str)
       },
       None => JsValue::null(),
     }
@@ -305,38 +286,29 @@ impl ZodBigInt {
     }
     
     // BigIntをJavaScriptの文字列表現に変換
-    let big_int_to_string = js_sys::Function::new_with_args("n", "return n.toString()");
-    let value_str = big_int_to_string.call1(&JsValue::NULL, value).unwrap().as_string().unwrap();
+    let value_str = value.as_string().unwrap();
     
-    // 比較用の関数をJavaScriptで定義
-    let compare_bigints = js_sys::Function::new_with_args(
-      "a, b, operator", 
-      r#"
-      const bigA = BigInt(a);
-      const bigB = BigInt(b);
-      switch(operator) {
-        case ">": return bigA > bigB;
-        case ">=": return bigA >= bigB;
-        case "<": return bigA < bigB;
-        case "<=": return bigA <= bigB;
-        case "===": return bigA === bigB;
-        default: return false;
+    // 比較用の関数をRustで定義
+    fn compare_bigints(a: &str, b: &str, operator: &str) -> bool {
+      let big_a = a.parse::<i128>().unwrap();
+      let big_b = b.parse::<i128>().unwrap();
+      match operator {
+        ">" => big_a > big_b,
+        ">=" => big_a >= big_b,
+        "<" => big_a < big_b,
+        "<=" => big_a <= big_b,
+        "===" => big_a == big_b,
+        _ => false,
       }
-      "#
-    );
+    }
     
     // 制約のチェック
     // 最小値の制約
     if let Some(min) = &self.min {
       let op = if self.gt { ">" } else { ">=" };
-      let result = compare_bigints.call3(
-        &JsValue::NULL, 
-        &JsValue::from_str(&value_str), 
-        &JsValue::from_str(min),
-        &JsValue::from_str(op)
-      ).unwrap();
+      let result = compare_bigints(&value_str, min, op);
       
-      if !result.as_bool().unwrap_or(false) {
+      if !result {
         let error_msg = if self.gt {
           format!("BigInt must be greater than {}", min)
         } else {
@@ -349,14 +321,9 @@ impl ZodBigInt {
     // 最大値の制約
     if let Some(max) = &self.max {
       let op = if self.lt { "<" } else { "<=" };
-      let result = compare_bigints.call3(
-        &JsValue::NULL, 
-        &JsValue::from_str(&value_str), 
-        &JsValue::from_str(max),
-        &JsValue::from_str(op)
-      ).unwrap();
+      let result = compare_bigints(&value_str, max, op);
       
-      if !result.as_bool().unwrap_or(false) {
+      if !result {
         let error_msg = if self.lt {
           format!("BigInt must be less than {}", max)
         } else {
@@ -368,23 +335,16 @@ impl ZodBigInt {
     
     // 倍数制約のチェック
     if let Some(multiple) = &self.multiple_of {
-      let is_multiple_of = js_sys::Function::new_with_args(
-        "value, multiple", 
-        r#"
-        if (multiple === "0") return true;
-        const bigValue = BigInt(value);
-        const bigMultiple = BigInt(multiple);
-        return bigValue % bigMultiple === 0n;
-        "#
-      );
+      let is_multiple_of = |value: &str, multiple: &str| -> bool {
+        if multiple == "0" { return true; }
+        let big_value = value.parse::<i128>().unwrap();
+        let big_multiple = multiple.parse::<i128>().unwrap();
+        big_value % big_multiple == 0
+      };
       
-      let result = is_multiple_of.call2(
-        &JsValue::NULL, 
-        &JsValue::from_str(&value_str), 
-        &JsValue::from_str(multiple)
-      ).unwrap();
+      let result = is_multiple_of(&value_str, multiple);
       
-      if !result.as_bool().unwrap_or(false) {
+      if !result {
         let error_msg = format!("BigInt must be a multiple of {}", multiple);
         return super::types::create_result_object("error", &JsValue::from_str(&error_msg));
       }
@@ -415,18 +375,27 @@ impl ZodBigInt {
       wasm_bindgen::throw_str(&error_msg);
     }
   }
+
+  #[wasm_bindgen]
+  pub fn safe_parse(&self, value: JsValue) -> Result<JsValue, String> {
+      let result = self._parse(&value);
+      let status = js_sys::Reflect::get(&result, &JsValue::from_str("status")).unwrap();
+      if status.as_string().unwrap() == "ok" {
+          Ok(value)
+      } else {
+          let error_value = js_sys::Reflect::get(&result, &JsValue::from_str("value")).unwrap();
+          let error_msg = if error_value.is_string() {
+              error_value.as_string().unwrap()
+          } else {
+              format!("Expected bigint, received {}", <Self as ZodType>::_get_type(self, &value))
+          };
+          Err(error_msg)
+      }
+  }
   
   // 値がBigIntかどうかを判定するヘルパーメソッド
   fn _is_bigint(&self, value: &JsValue) -> bool {
-    let is_bigint_func = js_sys::Function::new_with_args(
-      "val", 
-      "return typeof val === 'bigint';"
-    );
-    
-    is_bigint_func.call1(&JsValue::NULL, value)
-      .unwrap()
-      .as_bool()
-      .unwrap_or(false)
+    value.is_bigint()
   }
 }
 

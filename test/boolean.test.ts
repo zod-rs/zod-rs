@@ -27,5 +27,8 @@ describe("test z.boolean", () => {
     expect(() => { schema.parse(undefined) }).toThrow() // undefinedはエラー
     expect(() => { schema.parse({}) }).toThrow() // オブジェクトはエラー
     expect(() => { schema.parse([]) }).toThrow() // 配列はエラー
+
+    expect(schema.safeParse(true).success).toBe(true)
+    expect(schema.safeParse(0).success).toBe(false)
   })
 })

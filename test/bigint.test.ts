@@ -40,6 +40,9 @@ describe("test z.bigint", () => {
     const numberSchema = z.bigint().gte(5)
     expect(() => { numberSchema.parse(5n) }).not.toThrow()
     expect(() => { numberSchema.parse(4n) }).toThrow()
+
+    expect(schema.safeParse(6n).success).toBe(true)
+    expect(schema.safeParse(4n).success).toBe(false)
   })
   
   test("z.bigint().lt", () => {
@@ -53,6 +56,9 @@ describe("test z.bigint", () => {
     const numberSchema = z.bigint().lt(5)
     expect(() => { numberSchema.parse(4n) }).not.toThrow()
     expect(() => { numberSchema.parse(5n) }).toThrow()
+
+    expect(schema.safeParse(4n).success).toBe(true)
+    expect(schema.safeParse(5n).success).toBe(false)
   })
   
   test("z.bigint().lte", () => {
@@ -66,6 +72,9 @@ describe("test z.bigint", () => {
     const numberSchema = z.bigint().lte(5)
     expect(() => { numberSchema.parse(5n) }).not.toThrow()
     expect(() => { numberSchema.parse(6n) }).toThrow()
+
+    expect(schema.safeParse(5n).success).toBe(true)
+    expect(schema.safeParse(6n).success).toBe(false)
   })
 
   test("z.bigint().{min,max} (alias)", () => {
@@ -81,6 +90,10 @@ describe("test z.bigint", () => {
     const numberSchema = z.bigint().min(5).max(10)
     expect(() => { numberSchema.parse(5n) }).not.toThrow()
     expect(() => { numberSchema.parse(4n) }).toThrow()
+
+    expect(schema.safeParse(5n).success).toBe(true)
+    expect(schema.safeParse(4n).success).toBe(false)
+    expect(schema.safeParse(11n).success).toBe(false)
   })
   
   test("複合条件：min〜max範囲", () => {
@@ -91,6 +104,10 @@ describe("test z.bigint", () => {
     expect(() => { schema.parse(10n) }).not.toThrow() // 最大境界値
     expect(() => { schema.parse(4n) }).toThrow() // 範囲外
     expect(() => { schema.parse(11n) }).toThrow() // 範囲外
+
+    expect(schema.safeParse(5n).success).toBe(true)
+    expect(schema.safeParse(4n).success).toBe(false)
+    expect(schema.safeParse(11n).success).toBe(false)
   })
   
   test("z.bigint().positive", () => {
@@ -100,6 +117,10 @@ describe("test z.bigint", () => {
     expect(() => { schema.parse(BigInt(Number.MAX_SAFE_INTEGER)) }).not.toThrow() // 大きな値
     expect(() => { schema.parse(0n) }).toThrow() // 境界値（0）はエラー
     expect(() => { schema.parse(-1n) }).toThrow() // 負の数
+
+    expect(schema.safeParse(1n).success).toBe(true)
+    expect(schema.safeParse(0n).success).toBe(false)
+    expect(schema.safeParse(-1n).success).toBe(false)
   })
   
   test("z.bigint().nonnegative", () => {
@@ -108,6 +129,10 @@ describe("test z.bigint", () => {
     expect(() => { schema.parse(1n) }).not.toThrow() // 正の数
     expect(() => { schema.parse(0n) }).not.toThrow() // 境界値（0）は許可
     expect(() => { schema.parse(-1n) }).toThrow() // 負の数
+
+    expect(schema.safeParse(1n).success).toBe(true)
+    expect(schema.safeParse(0n).success).toBe(true)
+    expect(schema.safeParse(-1n).success).toBe(false)
   })
   
   test("z.bigint().negative", () => {
@@ -117,6 +142,10 @@ describe("test z.bigint", () => {
     expect(() => { schema.parse(BigInt(-Number.MAX_SAFE_INTEGER)) }).not.toThrow() // 大きな負の値
     expect(() => { schema.parse(0n) }).toThrow() // 境界値（0）はエラー
     expect(() => { schema.parse(1n) }).toThrow() // 正の数
+
+    expect(schema.safeParse(-1n).success).toBe(true)
+    expect(schema.safeParse(0n).success).toBe(false)
+    expect(schema.safeParse(1n).success).toBe(false)
   })
   
   test("z.bigint().nonpositive", () => {
@@ -125,6 +154,10 @@ describe("test z.bigint", () => {
     expect(() => { schema.parse(-1n) }).not.toThrow() // 負の数
     expect(() => { schema.parse(0n) }).not.toThrow() // 境界値（0）は許可
     expect(() => { schema.parse(1n) }).toThrow() // 正の数
+
+    expect(schema.safeParse(-1n).success).toBe(true)
+    expect(schema.safeParse(0n).success).toBe(true)
+    expect(schema.safeParse(1n).success).toBe(false)
   })
   
   test("z.bigint().multipleOf", () => {
@@ -141,6 +174,9 @@ describe("test z.bigint", () => {
     const numberSchema = z.bigint().multipleOf(5)
     expect(() => { numberSchema.parse(10n) }).not.toThrow()
     expect(() => { numberSchema.parse(7n) }).toThrow()
+
+    expect(schema.safeParse(10n).success).toBe(true)
+    expect(schema.safeParse(7n).success).toBe(false)
   })
   
   test("複合条件：範囲と倍数", () => {
@@ -152,5 +188,9 @@ describe("test z.bigint", () => {
     expect(() => { schema.parse(0n) }).toThrow() // 範囲外
     expect(() => { schema.parse(24n) }).toThrow() // 範囲外
     expect(() => { schema.parse(10n) }).toThrow() // 範囲内だが倍数ではない
+
+    expect(schema.safeParse(4n).success).toBe(true)
+    expect(schema.safeParse(0n).success).toBe(false)
+    expect(schema.safeParse(10n).success).toBe(false)
   })
 })
