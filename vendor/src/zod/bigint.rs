@@ -275,8 +275,8 @@ impl ZodBigInt {
     }
   }
 
-  // 内部処理用のメソッド
-  pub fn _parse(&self, value: &JsValue) -> JsValue {
+  // 内部実装用のパースメソッド
+  fn _parse_internal(&self, value: &JsValue) -> JsValue {
     // 値がBigIntかどうかをチェック
     if !self._is_bigint(value) {
       return super::types::create_result_object(
@@ -354,44 +354,6 @@ impl ZodBigInt {
     super::types::create_result_object("ok", value)
   }
   
-  // JavaScriptから利用可能な公開メソッド
-  #[wasm_bindgen]
-  pub fn parse(&self, value: JsValue) -> JsValue {
-    let result = self._parse(&value);
-    let status = js_sys::Reflect::get(&result, &JsValue::from_str("status")).unwrap();
-    
-    if status.as_string().unwrap() == "ok" {
-      // 成功した場合、値をそのまま返す
-      return value;
-    } else {
-      // エラーメッセージを取得
-      let error_value = js_sys::Reflect::get(&result, &JsValue::from_str("value")).unwrap();
-      let error_msg = if error_value.is_string() {
-        error_value.as_string().unwrap()
-      } else {
-        format!("Expected bigint, received {}", <Self as ZodType>::_get_type(self, &value))
-      };
-      
-      wasm_bindgen::throw_str(&error_msg);
-    }
-  }
-
-  #[wasm_bindgen]
-  pub fn safe_parse(&self, value: JsValue) -> Result<JsValue, String> {
-      let result = self._parse(&value);
-      let status = js_sys::Reflect::get(&result, &JsValue::from_str("status")).unwrap();
-      if status.as_string().unwrap() == "ok" {
-          Ok(value)
-      } else {
-          let error_value = js_sys::Reflect::get(&result, &JsValue::from_str("value")).unwrap();
-          let error_msg = if error_value.is_string() {
-              error_value.as_string().unwrap()
-          } else {
-              format!("Expected bigint, received {}", <Self as ZodType>::_get_type(self, &value))
-          };
-          Err(error_msg)
-      }
-  }
   
   // 値がBigIntかどうかを判定するヘルパーメソッド
   fn _is_bigint(&self, value: &JsValue) -> bool {
@@ -414,4 +376,13 @@ impl ZodType for ZodBigInt {
     // その他の型はデフォルト実装を使用
     <super::types::ZodTypeBase as ZodType>::_get_type(&self.base, value)
   }
+  
+  // トレイト要件の_parseメソッド実装
+  fn _parse(&self, value: &JsValue) -> JsValue {
+    self._parse_internal(value)
+  }
 }
+
+// JavaScriptインターフェース用のメソッドを実装
+use crate::impl_js_methods;
+impl_js_methods!(ZodBigInt);

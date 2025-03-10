@@ -276,7 +276,8 @@ impl ZodString {
   // base64url バリデーションを有効にするメソッド
   #[wasm_bindgen]
   pub fn base64url(&self) -> ZodString {
-    let base64url_regex = RegExp::new(r"^(?:[A-Za-z0-9-_]{4})*(?:[A-Za-z0-9-_]{2}==|[A-Za-z0-9-_]{3}=)?$", "");
+    // https://github.com/colinhacks/zod/blob/850871defc2c98928f1c7e8e05e93d4a84ed3c5f/src/types.ts#L687
+    let base64url_regex = RegExp::new(r"^([0-9a-zA-Z-_]{4})*(([0-9a-zA-Z-_]{2}(==)?)|([0-9a-zA-Z-_]{3}(=)?))?$", "");
     ZodString {
       base: ZodTypeBase::new(&self.base.type_name),
       min: self.min,
@@ -293,15 +294,14 @@ impl ZodString {
     }
   }
 
-  // 内部処理用のメソッド
-  pub fn _parse(&self, value: &JsValue) -> Result<JsValue, String> {
+  // 内部実装用のパースメソッド - トレイト実装のためのものではない
+  fn _parse_internal(&self, value: &JsValue) -> JsValue {
     // 基本的な型チェック
     let base_result = <Self as ZodType>::_create_parse_result(self, value);
     let status = js_sys::Reflect::get(&base_result, &JsValue::from_str("status")).unwrap();
     
     if status.as_string().unwrap() == "error" {
-      let error_value = js_sys::Reflect::get(&base_result, &JsValue::from_str("value")).unwrap();
-      return Err(error_value.as_string().unwrap_or_else(|| "Unknown error".to_string()));
+      return base_result;
     }
     
     // 値が文字列であることが確認できたら、制約をチェック
@@ -310,25 +310,28 @@ impl ZodString {
       if let Some(min_value) = self.min {
         if str_val.len() < min_value {
           // nonemptyのカスタムメッセージがあり、min_valueが1の場合はそれを使用
-          if min_value == 1 && self.nonempty_message.is_some() {
-            return Err(self.nonempty_message.as_ref().unwrap().clone());
+          let err_msg = if min_value == 1 && self.nonempty_message.is_some() {
+            self.nonempty_message.as_ref().unwrap().clone()
           } else {
-            return Err(format!("String must contain at least {} character(s)", min_value));
-          }
+            format!("String must contain at least {} character(s)", min_value)
+          };
+          return super::types::create_result_object("error", &JsValue::from_str(&err_msg));
         }
       }
       
       // 最大文字数のチェック
       if let Some(max_value) = self.max {
         if str_val.len() > max_value {
-          return Err(format!("String must contain at most {} character(s)", max_value));
+          let err_msg = format!("String must contain at most {} character(s)", max_value);
+          return super::types::create_result_object("error", &JsValue::from_str(&err_msg));
         }
       }
       
       // 正確な文字数のチェック
       if let Some(length_value) = self.length {
         if str_val.len() != length_value {
-          return Err(format!("String must contain exactly {} character(s)", length_value));
+          let err_msg = format!("String must contain exactly {} character(s)", length_value);
+          return super::types::create_result_object("error", &JsValue::from_str(&err_msg));
         }
       }
       
@@ -338,7 +341,7 @@ impl ZodString {
         // Zodの正規表現を利用 (https://github.com/colinhacks/zod/blob/850871defc2c98928f1c7e8e05e93d4a84ed3c5f/src/types.ts#L660)
         let email_regex = RegExp::new(r"^(?!\.)(?!.*\.\.)([A-Z0-9_'+\-\.]*)[A-Z0-9_+-]@([A-Z0-9][A-Z0-9\-]*\.)+[A-Z]{2,}$", "i");
         if !email_regex.test(&str_val) {
-          return Err("Invalid email".to_string());
+          return super::types::create_result_object("error", &JsValue::from_str("Invalid email"));
         }
       }
       
@@ -348,14 +351,14 @@ impl ZodString {
         // より柔軟なURLパターンに対応するよう、RFC3986に準拠した正規表現を使用
         let url_regex = RegExp::new(r"^[a-z]([a-z]|[0-9]|[+\-.])*:(\/\/((([a-z]|[0-9]|[-._~])|%[0-9a-f][0-9a-f]|[!$&'()*+,;=]|:)*@)?(\[((([0-9a-f]{1,4}:){6}([0-9a-f]{1,4}:[0-9a-f]{1,4}|([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){3})|::([0-9a-f]{1,4}:){5}([0-9a-f]{1,4}:[0-9a-f]{1,4}|([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){3})|([0-9a-f]{1,4})?::([0-9a-f]{1,4}:){4}([0-9a-f]{1,4}:[0-9a-f]{1,4}|([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){3})|(([0-9a-f]{1,4}:){0,1}[0-9a-f]{1,4})?::([0-9a-f]{1,4}:){3}([0-9a-f]{1,4}:[0-9a-f]{1,4}|([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){3})|(([0-9a-f]{1,4}:){0,2}[0-9a-f]{1,4})?::([0-9a-f]{1,4}:){2}([0-9a-f]{1,4}:[0-9a-f]{1,4}|([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){3})|(([0-9a-f]{1,4}:){0,3}[0-9a-f]{1,4})?::[0-9a-f]{1,4}:([0-9a-f]{1,4}:[0-9a-f]{1,4}|([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){3})|(([0-9a-f]{1,4}:){0,4}[0-9a-f]{1,4})?::([0-9a-f]{1,4}:[0-9a-f]{1,4}|([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){3})|(([0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4})?::[0-9a-f]{1,4}|(([0-9a-f]{1,4}:){0,6}[0-9a-f]{1,4})?::)|v[0-9a-f]+\.(([a-z]|[0-9]|[-._~])|[!$&'()*+,;=]|:)+)]|([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){3}|(([a-z]|[0-9]|[-._~])|%[0-9a-f][0-9a-f]|[!$&'()*+,;=])*)(:\d*)?(\/((([a-z]|[0-9]|[-._~])|%[0-9a-f][0-9a-f]|[!$&'()*+,;=]|[:@]))*)*|\/(((([a-z]|[0-9]|[-._~])|%[0-9a-f][0-9a-f]|[!$&'()*+,;=]|[:@]))+(\/((([a-z]|[0-9]|[-._~])|%[0-9a-f][0-9a-f]|[!$&'()*+,;=]|[:@]))*)*)?|((([a-z]|[0-9]|[-._~])|%[0-9a-f][0-9a-f]|[!$&'()*+,;=]|[:@]))+(\/((([a-z]|[0-9]|[-._~])|%[0-9a-f][0-9a-f]|[!$&'()*+,;=]|[:@]))*)*|)(\?((([a-z]|[0-9]|[-._~])|%[0-9a-f][0-9a-f]|[!$&'()*+,;=]|[:@])|[\/?])*)?(#((([a-z]|[0-9]|[-._~])|%[0-9a-f][0-9a-f]|[!$&'()*+,;=]|[:@])|[\/?])*)?$", "i");
         if !url_regex.test(&str_val) {
-          return Err("Invalid url".to_string());
+          return super::types::create_result_object("error", &JsValue::from_str("Invalid url"));
         }
       }
       
       // 正規表現のチェック
       if let Some(regex_pattern) = &self.regex {
         if !regex_pattern.test(&str_val) {
-          return Err("Invalid string pattern".to_string());
+          return super::types::create_result_object("error", &JsValue::from_str("Invalid string pattern"));
         }
       }
       
@@ -366,24 +369,28 @@ impl ZodString {
           // 指定位置から文字列が始まるかチェック
           if exact_position >= str_val.len() {
             // 開始位置が文字列長より大きい場合は見つからない
-            return Err(format!("String must include \"{}\" at position {}", includes_text, exact_position));
+            let err_msg = format!("String must include \"{}\" at position {}", includes_text, exact_position);
+            return super::types::create_result_object("error", &JsValue::from_str(&err_msg));
           }
           
           // 指定位置から始まる部分文字列が指定の文字列で始まるかチェック
           if str_val.len() < exact_position + includes_text.len() {
             // 残りの文字数が足りない場合
-            return Err(format!("String must include \"{}\" at position {}", includes_text, exact_position));
+            let err_msg = format!("String must include \"{}\" at position {}", includes_text, exact_position);
+            return super::types::create_result_object("error", &JsValue::from_str(&err_msg));
           }
           
           // exact_position位置から始まる部分が指定文字列と一致するかチェック
           let expected_substring = &str_val[exact_position..(exact_position + includes_text.len())];
           if expected_substring != includes_text {
-            return Err(format!("String must include \"{}\" at position {}", includes_text, exact_position));
+            let err_msg = format!("String must include \"{}\" at position {}", includes_text, exact_position);
+            return super::types::create_result_object("error", &JsValue::from_str(&err_msg));
           }
         } else {
           // 位置指定がない場合は単純に含まれているかチェック
           if !str_val.contains(includes_text.as_str()) {
-            return Err(format!("String must include \"{}\"", includes_text));
+            let err_msg = format!("String must include \"{}\"", includes_text);
+            return super::types::create_result_object("error", &JsValue::from_str(&err_msg));
           }
         }
       }
@@ -391,63 +398,25 @@ impl ZodString {
       // startsWithのチェック
       if let Some(starts_with_text) = &self.starts_with {
         if !str_val.starts_with(starts_with_text) {
-          return Err(format!("String must start with \"{}\"", starts_with_text));
+          let err_msg = format!("String must start with \"{}\"", starts_with_text);
+          return super::types::create_result_object("error", &JsValue::from_str(&err_msg));
         }
       }
       
       // endsWithのチェック
       if let Some(ends_with_text) = &self.ends_with {
         if !str_val.ends_with(ends_with_text) {
-          return Err(format!("String must end with \"{}\"", ends_with_text));
+          let err_msg = format!("String must end with \"{}\"", ends_with_text);
+          return super::types::create_result_object("error", &JsValue::from_str(&err_msg));
         }
       }
-    } else {
-      // 文字列でない場合
-      return Err(format!("Expected string, received {}", <Self as ZodType>::_get_type(self, value)));
     }
     
     // すべての検証をパスしたら成功
-    Ok(value.clone())
+    super::types::create_result_object("ok", value)
   }
   
-  // JavaScriptから利用可能な公開メソッド
-  #[wasm_bindgen]
-  pub fn parse(&self, value: JsValue) -> String {
-    match self._parse(&value) {
-      Ok(_) => {
-        // 検証に成功した場合、文字列値を返す
-        if let Some(str_val) = value.as_string() {
-          str_val
-        } else {
-          // 通常はここに到達しないはず
-          wasm_bindgen::throw_str("Expected string but received non-string value");
-        }
-      },
-      Err(err_msg) => {
-        // エラーの場合は例外をスロー
-        wasm_bindgen::throw_str(&err_msg);
-      }
-    }
-  }
-
-  #[wasm_bindgen]
-  pub fn safe_parse(&self, value: JsValue) -> Result<String, String> {
-      match self._parse(&value) {
-          Ok(_) => {
-              // 検証に成功した場合、文字列値を返す
-              if let Some(str_val) = value.as_string() {
-                  Ok(str_val)
-              } else {
-                  // 通常はここに到達しないはず
-                  Err("Expected string but received non-string value".to_string())
-              }
-          },
-          Err(err_msg) => {
-              // エラーの場合はエラーメッセージを返す
-              Err(err_msg)
-          }
-      }
-  }
+  // ZodTypeトレイトの共通実装を使用するため、個別の実装は削除
 }
 
 // ZodString型にZodTypeトレイトを実装
@@ -455,4 +424,13 @@ impl ZodType for ZodString {
   fn r#type(&self) -> &str {
     &self.base.type_name
   }
+  
+  // トレイト要件の_parseメソッド実装
+  fn _parse(&self, value: &JsValue) -> JsValue {
+    self._parse_internal(value)
+  }
 }
+
+// JavaScriptインターフェース用のメソッドを実装
+use crate::impl_js_methods;
+impl_js_methods!(ZodString);

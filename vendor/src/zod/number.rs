@@ -317,8 +317,8 @@ impl ZodNumber {
     }
   }
 
-  // 内部処理用のメソッド
-  pub fn _parse(&self, value: &JsValue) -> JsValue {
+  // 内部実装用のパースメソッド
+  fn _parse_internal(&self, value: &JsValue) -> JsValue {
     // 値がNaNかどうかをチェック
     if value.as_f64().map_or(false, |n| n.is_nan()) {
       return super::types::create_result_object(
@@ -422,61 +422,6 @@ impl ZodNumber {
     super::types::create_result_object("ok", value)
   }
   
-  // JavaScriptから利用可能な公開メソッド
-  // 戻り値をJsValueではなく明示的に数値として指定
-  #[wasm_bindgen]
-  pub fn parse(&self, value: JsValue) -> f64 {
-    let result = self._parse(&value);
-    let status = js_sys::Reflect::get(&result, &JsValue::from_str("status")).unwrap();
-    
-    if status.as_string().unwrap() == "ok" {
-      // 値が数値の場合、そのまま返す
-      if let Some(num) = value.as_f64() {
-        return num;
-      } else {
-        // 通常はここに到達しないはず
-        return 0.0;
-      }
-    } else {
-      // エラーメッセージを取得
-      let error_value = js_sys::Reflect::get(&result, &JsValue::from_str("value")).unwrap();
-      let error_msg = if error_value.is_string() {
-        error_value.as_string().unwrap()
-      } else {
-        format!("Expected number, received {}", <Self as ZodType>::_get_type(self, &value))
-      };
-      
-      wasm_bindgen::throw_str(&error_msg);
-    }
-  }
-
-  // JavaScriptから利用可能な安全なパースメソッド
-  // 例外をスローする代わりにResult型を返す
-  #[wasm_bindgen]
-  pub fn safe_parse(&self, value: JsValue) -> Result<f64, String> {
-    let result = self._parse(&value);
-    let status = js_sys::Reflect::get(&result, &JsValue::from_str("status")).unwrap();
-    
-    if status.as_string().unwrap() == "ok" {
-      // 値が数値の場合、そのまま返す
-      if let Some(num) = value.as_f64() {
-        Ok(num)
-      } else {
-        // 通常はここに到達しないはず
-        Err("Expected number, received non-number value".to_string())
-      }
-    } else {
-      // エラーメッセージを取得
-      let error_value = js_sys::Reflect::get(&result, &JsValue::from_str("value")).unwrap();
-      let error_msg = if error_value.is_string() {
-        error_value.as_string().unwrap()
-      } else {
-        format!("Expected number, received {}", <Self as ZodType>::_get_type(self, &value))
-      };
-      
-      Err(error_msg)
-    }
-  }
 }
 
 // ZodNumber型にZodTypeトレイトを実装
@@ -484,4 +429,13 @@ impl ZodType for ZodNumber {
   fn r#type(&self) -> &str {
     &self.base.type_name
   }
+  
+  // トレイト要件の_parseメソッド実装
+  fn _parse(&self, value: &JsValue) -> JsValue {
+    self._parse_internal(value)
+  }
 }
+
+// JavaScriptインターフェース用のメソッドを実装
+use crate::impl_js_methods;
+impl_js_methods!(ZodNumber);

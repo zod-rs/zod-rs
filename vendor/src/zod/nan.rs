@@ -16,8 +16,8 @@ impl ZodNaN {
     }
   }
 
-  // 内部処理用のパースメソッド
-  pub fn _parse(&self, value: &JsValue) -> JsValue {
+  // 内部実装用のパースメソッド
+  fn _parse_internal(&self, value: &JsValue) -> JsValue {
     // 値がNaNかどうかをチェック
     if self._is_nan(value) {
       // NaNである場合は成功
@@ -30,46 +30,7 @@ impl ZodNaN {
       )
     }
   }
-  
-  // JavaScriptから利用可能な公開メソッド
-  #[wasm_bindgen]
-  pub fn parse(&self, value: JsValue) -> JsValue {
-    let result = self._parse(&value);
-    let status = js_sys::Reflect::get(&result, &JsValue::from_str("status")).unwrap();
-    
-    if status.as_string().unwrap() == "ok" {
-      // 成功した場合、値をそのまま返す
-      return value;
-    } else {
-      // エラーメッセージを取得
-      let error_value = js_sys::Reflect::get(&result, &JsValue::from_str("value")).unwrap();
-      let error_msg = if error_value.is_string() {
-        error_value.as_string().unwrap()
-      } else {
-        format!("Expected NaN, received {}", <Self as ZodType>::_get_type(self, &value))
-      };
-      
-      wasm_bindgen::throw_str(&error_msg);
-    }
-  }
 
-  #[wasm_bindgen]
-  pub fn safe_parse(&self, value: JsValue) -> Result<JsValue, String> {
-      let result = self._parse(&value);
-      let status = js_sys::Reflect::get(&result, &JsValue::from_str("status")).unwrap();
-      if status.as_string().unwrap() == "ok" {
-          Ok(value)
-      } else {
-          let error_value = js_sys::Reflect::get(&result, &JsValue::from_str("value")).unwrap();
-          let error_msg = if error_value.is_string() {
-              error_value.as_string().unwrap()
-          } else {
-              format!("Expected NaN, received {}", <Self as ZodType>::_get_type(self, &value))
-          };
-          Err(error_msg)
-      }
-  }
-  
   // 値がNaNかどうかを判定するヘルパーメソッド
   fn _is_nan(&self, value: &JsValue) -> bool {
     let is_nan_func = js_sys::Function::new_with_args(
@@ -89,4 +50,13 @@ impl ZodType for ZodNaN {
   fn r#type(&self) -> &str {
     &self.base.type_name
   }
+  
+  // トレイト要件の_parseメソッド実装
+  fn _parse(&self, value: &JsValue) -> JsValue {
+    self._parse_internal(value)
+  }
 }
+
+// JavaScriptインターフェース用のメソッドを実装
+use crate::impl_js_methods;
+impl_js_methods!(ZodNaN);
